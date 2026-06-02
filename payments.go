@@ -85,8 +85,8 @@ func (c *Client) GetPaymentStatus(paymentID interface{}) (*Payment, error) {
 	return &result, nil
 }
 
-// GetPayments returns paginated list of payments.
-func (c *Client) GetPayments(params *ListPaymentsParams) (*PaymentsListResponse, error) {
+// GetPayments returns paginated list of payments. JWT recommended per API docs.
+func (c *Client) GetPayments(params *ListPaymentsParams, jwtToken string) (*PaymentsListResponse, error) {
 	q := url.Values{}
 	if params != nil {
 		if params.Limit > 0 {
@@ -113,7 +113,7 @@ func (c *Client) GetPayments(params *ListPaymentsParams) (*PaymentsListResponse,
 		path += "?" + q.Encode()
 	}
 	var result PaymentsListResponse
-	if err := c.do("GET", path, nil, &result, ""); err != nil {
+	if err := c.do("GET", path, nil, &result, jwtToken); err != nil {
 		return nil, err
 	}
 	return &result, nil

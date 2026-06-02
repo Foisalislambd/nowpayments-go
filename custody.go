@@ -11,7 +11,7 @@ func (c *Client) GetSubPartners(params *GetSubPartnersParams, jwtToken string) (
 	q := url.Values{}
 	if params != nil {
 		if params.ID != nil {
-			q.Set("id", fmt.Sprintf("%v", params.ID))
+			appendQueryParam(q, "id", params.ID)
 		}
 		if params.Offset > 0 {
 			q.Set("offset", fmt.Sprintf("%d", params.Offset))
@@ -70,10 +70,10 @@ func (c *Client) GetTransfers(params *GetTransfersParams, jwtToken string) (inte
 	q := url.Values{}
 	if params != nil {
 		if params.ID != nil {
-			q.Set("id", fmt.Sprintf("%v", params.ID))
+			appendQueryParam(q, "id", params.ID)
 		}
 		if params.Status != nil {
-			q.Set("status", fmt.Sprintf("%v", params.Status))
+			appendQueryParam(q, "status", params.Status)
 		}
 		if params.Limit > 0 {
 			q.Set("limit", fmt.Sprintf("%d", params.Limit))

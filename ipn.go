@@ -1,13 +1,17 @@
 package nowpayments
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"regexp"
 	"sort"
 	"strings"
 )
+
+var ipnSigHexStrip = regexp.MustCompile(`[^a-fA-F0-9]`)
 
 // VerifyIPNSignature verifies the IPN callback signature from NOWPayments.
 // payload can be raw JSON string or parsed object; signature is from x-nowpayments-sig header.
@@ -30,7 +34,8 @@ func VerifyIPNSignature(payload interface{}, signature, ipnSecret string) bool {
 	mac := hmac.New(sha512.New, []byte(strings.TrimSpace(ipnSecret)))
 	mac.Write([]byte(jsonStr))
 	computed := hex.EncodeToString(mac.Sum(nil))
-	sigBytes, err := hex.DecodeString(strings.TrimSpace(signature))
+	sigHex := strings.ToLower(ipnSigHexStrip.ReplaceAllString(signature, ""))
+	sigBytes, err := hex.DecodeString(sigHex)
 	if err != nil {
 		return false
 	}
@@ -85,6 +90,13 @@ func sortObject(obj map[string]interface{}) map[string]interface{} {
 
 func jsonEncodeSorted(obj map[string]interface{}) string {
 	sorted := sortObject(obj)
-	b, _ := json.Marshal(sorted)
-	return string(b)
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(sorted)
+	s := buf.String()
+	if len(s) > 0 && s[len(s)-1] == '\n' {
+		s = s[:len(s)-1]
+	}
+	return s
 }

@@ -106,11 +106,27 @@ func (c *Client) ValidatePayoutAddress(params ValidateAddressParams) (interface{
 	return result, nil
 }
 
+// GetPayoutFee estimates network fee for a payout.
+func (c *Client) GetPayoutFee(currency string, amount float64) (interface{}, error) {
+	if strings.TrimSpace(currency) == "" {
+		return nil, &NowPaymentsError{Message: `Currency is required (e.g. "btc", "eth")`}
+	}
+	q := url.Values{}
+	q.Set("currency", currency)
+	q.Set("amount", fmt.Sprintf("%v", amount))
+	path := "/v1/payout/fee?" + q.Encode()
+	var result interface{}
+	if err := c.get(path, nil, &result, ""); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // CancelPayout cancels a scheduled payout. Requires JWT.
 func (c *Client) CancelPayout(payoutID, jwtToken string) error {
 	if strings.TrimSpace(jwtToken) == "" {
 		return &NowPaymentsError{Message: "JWT token is required for CancelPayout. Call GetAuthToken first."}
 	}
 	body := map[string]string{"payout_id": payoutID}
-	return c.post("/v1/payout/"+url.PathEscape(payoutID)+"/cancel", body, nil, jwtToken)
+	return c.post("/v1/payout/w_id/cancel", body, nil, jwtToken)
 }
