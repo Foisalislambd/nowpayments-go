@@ -12,6 +12,9 @@ import (
 )
 
 const (
+	// Version is the SDK release version.
+	Version = "1.0.4"
+
 	ProductionURL = "https://api.nowpayments.io"
 	SandboxURL    = "https://api-sandbox.nowpayments.io"
 )
