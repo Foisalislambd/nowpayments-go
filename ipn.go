@@ -14,7 +14,8 @@ import (
 var ipnSigHexStrip = regexp.MustCompile(`[^a-fA-F0-9]`)
 
 // VerifyIPNSignature verifies the IPN callback signature from NOWPayments.
-// payload can be raw JSON string or parsed object; signature is from x-nowpayments-sig header.
+// Prefer passing the raw HTTP body string. Parsed maps can change number/string
+// types and break verification. Signature is from x-nowpayments-sig header.
 func VerifyIPNSignature(payload interface{}, signature, ipnSecret string) bool {
 	if strings.TrimSpace(signature) == "" || strings.TrimSpace(ipnSecret) == "" {
 		return false
@@ -34,7 +35,11 @@ func VerifyIPNSignature(payload interface{}, signature, ipnSecret string) bool {
 	mac := hmac.New(sha512.New, []byte(strings.TrimSpace(ipnSecret)))
 	mac.Write([]byte(jsonStr))
 	computed := hex.EncodeToString(mac.Sum(nil))
-	sigHex := strings.ToLower(ipnSigHexStrip.ReplaceAllString(signature, ""))
+	sigHex := strings.ToLower(strings.TrimSpace(signature))
+	if i := strings.LastIndex(sigHex, "="); i >= 0 {
+		sigHex = sigHex[i+1:]
+	}
+	sigHex = strings.ToLower(ipnSigHexStrip.ReplaceAllString(sigHex, ""))
 	sigBytes, err := hex.DecodeString(sigHex)
 	if err != nil {
 		return false

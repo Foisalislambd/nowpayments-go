@@ -103,9 +103,9 @@ func (c *Client) do(method, path string, body interface{}, result interface{}, j
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", c.apiKey)
+	req.Header.Set("x-api-key", strings.TrimSpace(c.apiKey))
 	if jwtToken != "" {
-		req.Header.Set("Authorization", "Bearer "+jwtToken)
+		req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(jwtToken))
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -153,7 +153,20 @@ func (c *Client) do(method, path string, body interface{}, result interface{}, j
 
 	if result != nil && len(respBody) > 0 {
 		if err := json.Unmarshal(respBody, result); err != nil {
-			return err
+			// Non-JSON success bodies (e.g. verify payout returns plain "OK")
+			if ptr, ok := result.(*interface{}); ok {
+				*ptr = strings.TrimSpace(string(respBody))
+				return nil
+			}
+			if ptr, ok := result.(*string); ok {
+				*ptr = strings.TrimSpace(string(respBody))
+				return nil
+			}
+			return &NowPaymentsError{
+				Message:    fmt.Sprintf("Failed to parse response: %v", err),
+				StatusCode: resp.StatusCode,
+				Response:   string(respBody),
+			}
 		}
 	}
 	return nil

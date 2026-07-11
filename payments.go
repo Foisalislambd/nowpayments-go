@@ -47,24 +47,12 @@ func (c *Client) GetMinAmount(params MinAmountParams) (*MinAmountResponse, error
 
 // CreatePayment creates a new payment. Returns address + amount for customer to pay.
 func (c *Client) CreatePayment(params CreatePaymentParams) (*Payment, error) {
-	body := CreatePaymentParams{
-		PriceAmount:      params.PriceAmount,
-		PriceCurrency:    params.PriceCurrency,
-		PayCurrency:      params.PayCurrency,
-		PayAmount:        params.PayAmount,
-		IPNCallbackURL:   params.IPNCallbackURL,
-		OrderID:          params.OrderID,
-		OrderDescription: params.OrderDescription,
-		PurchaseID:       params.PurchaseID,
-		PayoutAddress:    params.PayoutAddress,
-		PayoutCurrency:   params.PayoutCurrency,
-		PayoutExtraID:    params.PayoutExtraID,
-		IsFixedRate:      params.IsFixedRate,
-		IsFeePaidByUser:  params.IsFeePaidByUser,
+	body := params
+	if body.FixedRate != nil && body.IsFixedRate == nil {
+		body.IsFixedRate = body.FixedRate
 	}
-	if params.FixedRate != nil && params.IsFixedRate == nil {
-		body.IsFixedRate = params.FixedRate
-	}
+	// Never send deprecated fixed_rate field — API expects is_fixed_rate
+	body.FixedRate = nil
 	var result Payment
 	if err := c.post("/v1/payment", body, &result, ""); err != nil {
 		return nil, err

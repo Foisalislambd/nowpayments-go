@@ -19,6 +19,7 @@ func (c *Client) CreatePayout(params CreatePayoutParams, jwtToken string) (*Crea
 }
 
 // VerifyPayout verifies payout with 2FA code. Requires JWT.
+// API may return plain text "OK" or JSON {"result":"ok"}.
 func (c *Client) VerifyPayout(payoutID, verificationCode, jwtToken string) (string, error) {
 	if strings.TrimSpace(jwtToken) == "" {
 		return "", &NowPaymentsError{Message: "JWT token is required for VerifyPayout. Call GetAuthToken first."}
@@ -28,8 +29,11 @@ func (c *Client) VerifyPayout(payoutID, verificationCode, jwtToken string) (stri
 	if err := c.post("/v1/payout/"+url.PathEscape(payoutID)+"/verify", body, &result, jwtToken); err != nil {
 		return "", err
 	}
-	if m, ok := result.(map[string]interface{}); ok {
-		if s, ok := m["result"].(string); ok {
+	switch v := result.(type) {
+	case string:
+		return strings.Trim(v, `"`), nil
+	case map[string]interface{}:
+		if s, ok := v["result"].(string); ok {
 			return s, nil
 		}
 	}
